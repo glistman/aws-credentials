@@ -1,0 +1,13 @@
+[package]
+name = "aws-container-credentials"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+reqwest =  { version = "0.11.6", features =["json"]}
+chrono = { version = "0.4.19", features =["serde"]}
+serde = { version ="1.0.126", features = ["rc", "derive"]}
+serde_json = "1.0.59"
+tokio = { version = "1.9.0", features = ["full"] }
