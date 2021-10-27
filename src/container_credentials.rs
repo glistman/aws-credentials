@@ -54,7 +54,7 @@ impl AwsCointainerCredentials {
 }
 
 impl AwsContrainerCretendtialsProvider {
-    pub async fn new() -> AwsContrainerCretendtialsProvider {
+    pub async fn new() -> Arc<RwLock<AwsContrainerCretendtialsProvider>> {
         let mut credentials: Option<AwsCredentials> = None;
         let url = AwsContrainerCretendtialsProvider::get_credentials_url();
 
@@ -69,16 +69,28 @@ impl AwsContrainerCretendtialsProvider {
             }
         }
 
-        AwsContrainerCretendtialsProvider {
+        let provider = Arc::new(RwLock::new(AwsContrainerCretendtialsProvider {
             credentials,
             credentials_url: url,
             ttl_in_seconds: ttl,
             error: false,
-        }
+        }));
+
+        let refresh_provider = provider.clone();
+
+        tokio::spawn(async move {
+            AwsContrainerCretendtialsProvider::execute_refresh_procedure(refresh_provider).await;
+        });
+
+        provider
     }
 
     pub async fn await_for_reload(&self) {
-        sleep(Duration::from_secs(self.ttl_in_seconds)).await;
+        if self.error {
+            sleep(Duration::from_secs(1)).await;
+        } else {
+            sleep(Duration::from_secs(self.ttl_in_seconds)).await;
+        }
     }
 
     fn get_credentials_url() -> Option<String> {
@@ -113,6 +125,8 @@ impl AwsContrainerCretendtialsProvider {
             } else {
                 self.error = true;
             }
+        } else {
+            self.error = true;
         }
     }
 

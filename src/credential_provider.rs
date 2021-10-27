@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::errors::AwsCredentialsError;
 use async_trait::async_trait;
 
