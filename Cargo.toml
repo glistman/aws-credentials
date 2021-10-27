@@ -1,5 +1,5 @@
 [package]
-name = "aws-container-credentials"
+name = "aws-credentials"
 version = "0.1.0"
 edition = "2018"
 
@@ -11,3 +11,4 @@ chrono = { version = "0.4.19", features =["serde"]}
 serde = { version ="1.0.126", features = ["rc", "derive"]}
 serde_json = "1.0.59"
 tokio = { version = "1.9.0", features = ["full"] }
+async-trait = "0.1.51"

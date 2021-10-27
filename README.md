@@ -6,7 +6,10 @@ extract aws credentials from container
 ```bash
 use std::sync::Arc;
 
-use aws_container_credentials::AwsContrainerCretendtialsProvider;
+use aws_credentials::{
+    container_credentials::AwsContrainerCretendtialsProvider,
+    credential_provider::AwsCredentialProvider,
+};
 use tokio::sync::RwLock;
 
 #[tokio::main]
