@@ -21,6 +21,20 @@ impl AwsBasicCretendtialsProvider {
             },
         }
     }
+
+    pub fn new_with_session_token(
+        aws_access_key_id: &str,
+        aws_secret_access_key: &str,
+        aws_session_token: &str,
+    ) -> AwsBasicCretendtialsProvider {
+        AwsBasicCretendtialsProvider {
+            credentials: AwsCredentials {
+                aws_access_key_id: aws_access_key_id.to_string(),
+                aws_secret_access_key: aws_secret_access_key.to_string(),
+                aws_session_token: Some(aws_session_token.to_string()),
+            },
+        }
+    }
 }
 
 #[async_trait]
