@@ -11,8 +11,8 @@ use aws_credentials::{
 
 #[tokio::main]
 async fn main() {
-    let aws_contrainer_cretendtials_provider = AwsContrainerCretendtialsProvider::new().await;
-    let aws_contrainer_cretendtials_provider = aws_contrainer_cretendtials_provider.read().await;
+    let aws_container_credentials_provider = AwsContainerCredentialsProvider::new().await;
+    let aws_container_credentials_provider = aws_contrainer_cretendtials_provider.read().await;
     let credentials_result = aws_contrainer_cretendtials_provider.get_credentials().await;
 
     match credentials_result {

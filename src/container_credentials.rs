@@ -11,7 +11,7 @@ use crate::{
 };
 
 #[derive(Deserialize, Serialize, Debug)]
-pub struct AwsCointainerCredentials {
+pub struct AwsContainerCredentials {
     #[serde(alias = "RoleArn")]
     pub role_arn: String,
     #[serde(alias = "AccessKeyId")]
@@ -24,7 +24,7 @@ pub struct AwsCointainerCredentials {
     pub expiration: DateTime<Utc>,
 }
 
-impl AwsCointainerCredentials {
+impl AwsContainerCredentials {
     pub fn get_credentials(&self) -> AwsCredentials {
         AwsCredentials {
             aws_access_key_id: self.access_key_id.clone(),
@@ -34,14 +34,14 @@ impl AwsCointainerCredentials {
     }
 }
 
-pub struct AwsContrainerCretendtialsProvider {
+pub struct AwsContainerCredentialsProvider {
     pub credentials: Option<AwsCredentials>,
     pub credentials_url: Option<String>,
     pub ttl_in_seconds: u64,
     pub error: bool,
 }
 
-impl AwsCointainerCredentials {
+impl AwsContainerCredentials {
     pub fn get_ttl_in_seconds(&self) -> u64 {
         let duration = self.expiration.signed_duration_since(Utc::now());
         let ttl = duration.num_seconds();
@@ -53,23 +53,23 @@ impl AwsCointainerCredentials {
     }
 }
 
-impl AwsContrainerCretendtialsProvider {
-    pub async fn new() -> Arc<RwLock<AwsContrainerCretendtialsProvider>> {
+impl AwsContainerCredentialsProvider {
+    pub async fn new() -> Arc<RwLock<AwsContainerCredentialsProvider>> {
         let mut credentials: Option<AwsCredentials> = None;
-        let url = AwsContrainerCretendtialsProvider::get_credentials_url();
+        let url = AwsContainerCredentialsProvider::get_credentials_url();
 
         let mut ttl: u64 = 1;
 
         if let Some(credentials_url) = &url {
             if let Ok(aws_credentials) =
-                AwsContrainerCretendtialsProvider::load_credentials(credentials_url).await
+                AwsContainerCredentialsProvider::load_credentials(credentials_url).await
             {
                 ttl = aws_credentials.get_ttl_in_seconds();
                 credentials = Some(aws_credentials.get_credentials());
             }
         }
 
-        let provider = Arc::new(RwLock::new(AwsContrainerCretendtialsProvider {
+        let provider = Arc::new(RwLock::new(AwsContainerCredentialsProvider {
             credentials,
             credentials_url: url,
             ttl_in_seconds: ttl,
@@ -79,17 +79,17 @@ impl AwsContrainerCretendtialsProvider {
         let refresh_provider = provider.clone();
 
         tokio::spawn(async move {
-            AwsContrainerCretendtialsProvider::execute_refresh_procedure(refresh_provider).await;
+            AwsContainerCredentialsProvider::execute_refresh_procedure(refresh_provider).await;
         });
 
         provider
     }
 
-    pub async fn await_for_reload(&self) {
+    pub async fn time_to_await(&self) -> Duration {
         if self.error {
-            sleep(Duration::from_secs(1)).await;
+            Duration::from_secs(1)
         } else {
-            sleep(Duration::from_secs(self.ttl_in_seconds)).await;
+            Duration::from_secs(self.ttl_in_seconds)
         }
     }
 
@@ -100,52 +100,48 @@ impl AwsContrainerCretendtialsProvider {
 
     pub async fn load_credentials(
         url: &str,
-    ) -> Result<AwsCointainerCredentials, AwsCredentialsError> {
+    ) -> Result<AwsContainerCredentials, AwsCredentialsError> {
         let aws_container_credentials = reqwest::get(url)
             .await
-            .map_err(|error| AwsCredentialsError::RequestError(error))?
-            .json::<AwsCointainerCredentials>()
+            .map_err(AwsCredentialsError::RequestError)?
+            .json::<AwsContainerCredentials>()
             .await
-            .map_err(|error| AwsCredentialsError::RequestError(error))?;
+            .map_err(AwsCredentialsError::RequestError)?;
 
         Ok(aws_container_credentials)
     }
 
     pub async fn reload(&mut self) {
         if self.credentials_url.is_none() {
-            self.credentials_url = AwsContrainerCretendtialsProvider::get_credentials_url();
+            self.credentials_url = AwsContainerCredentialsProvider::get_credentials_url();
         }
+        let mut error = true;
 
         if let Some(credentials_url) = &self.credentials_url {
             if let Ok(new_aws_container_credentials) =
-                AwsContrainerCretendtialsProvider::load_credentials(&credentials_url).await
+                AwsContainerCredentialsProvider::load_credentials(credentials_url).await
             {
                 self.credentials = Some(new_aws_container_credentials.get_credentials());
-                self.error = false;
-            } else {
-                self.error = true;
+                error = false;
             }
-        } else {
-            self.error = true;
         }
+
+        self.error = error;
     }
 
-    pub async fn get_raw_credentials<'a>(
-        &'a self,
-    ) -> Result<&'a AwsCredentials, AwsCredentialsError> {
+    pub async fn get_raw_credentials(&self) -> Result<&AwsCredentials, AwsCredentialsError> {
         match &self.credentials {
             Some(credentials) => Ok(credentials),
             None => Err(AwsCredentialsError::CredentialsNotFound),
         }
     }
 
-    pub async fn execute_refresh_procedure(
-        provider: Arc<RwLock<AwsContrainerCretendtialsProvider>>,
-    ) {
+    pub async fn execute_refresh_procedure(provider: Arc<RwLock<AwsContainerCredentialsProvider>>) {
         loop {
             let aws_credential_provider = provider.read().await;
-            aws_credential_provider.await_for_reload().await;
+            let time_to_await = aws_credential_provider.time_to_await().await;
             drop(aws_credential_provider);
+            sleep(time_to_await).await;
             let mut aws_credential_provider = provider.write().await;
             aws_credential_provider.reload().await;
         }
@@ -153,7 +149,7 @@ impl AwsContrainerCretendtialsProvider {
 }
 
 #[async_trait]
-impl AwsCredentialProvider for AwsContrainerCretendtialsProvider {
+impl AwsCredentialProvider for AwsContainerCredentialsProvider {
     async fn get_credentials(&self) -> Result<&AwsCredentials, AwsCredentialsError> {
         self.get_raw_credentials().await
     }
@@ -161,7 +157,7 @@ impl AwsCredentialProvider for AwsContrainerCretendtialsProvider {
 
 #[cfg(test)]
 mod tests {
-    use crate::container_credentials::AwsCointainerCredentials;
+    use crate::container_credentials::AwsContainerCredentials;
 
     const JSON_CREDENTIALS: &str = "
     {
@@ -174,7 +170,7 @@ mod tests {
 
     #[test]
     fn json_response() {
-        let credentials = serde_json::from_str::<AwsCointainerCredentials>(JSON_CREDENTIALS);
+        let credentials = serde_json::from_str::<AwsContainerCredentials>(JSON_CREDENTIALS);
         assert_eq!(credentials.is_ok(), true);
     }
 }

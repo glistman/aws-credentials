@@ -7,16 +7,17 @@ use crate::{
     credential_provider::{AwsCredentialProvider, AwsCredentials},
     errors::AwsCredentialsError,
 };
-pub struct AwsBasicCretendtialsProvider {
+
+pub struct AwsBasicCredentialsProvider {
     credentials: AwsCredentials,
 }
 
-impl AwsBasicCretendtialsProvider {
+impl AwsBasicCredentialsProvider {
     pub fn new(
         aws_access_key_id: &str,
         aws_secret_access_key: &str,
-    ) -> Arc<RwLock<AwsBasicCretendtialsProvider>> {
-        Arc::new(RwLock::new(AwsBasicCretendtialsProvider {
+    ) -> Arc<RwLock<AwsBasicCredentialsProvider>> {
+        Arc::new(RwLock::new(AwsBasicCredentialsProvider {
             credentials: AwsCredentials {
                 aws_access_key_id: aws_access_key_id.to_string(),
                 aws_secret_access_key: aws_secret_access_key.to_string(),
@@ -29,8 +30,8 @@ impl AwsBasicCretendtialsProvider {
         aws_access_key_id: &str,
         aws_secret_access_key: &str,
         aws_session_token: &str,
-    ) -> Arc<RwLock<AwsBasicCretendtialsProvider>> {
-        Arc::new(RwLock::new(AwsBasicCretendtialsProvider {
+    ) -> Arc<RwLock<AwsBasicCredentialsProvider>> {
+        Arc::new(RwLock::new(AwsBasicCredentialsProvider {
             credentials: AwsCredentials {
                 aws_access_key_id: aws_access_key_id.to_string(),
                 aws_secret_access_key: aws_secret_access_key.to_string(),
@@ -41,7 +42,7 @@ impl AwsBasicCretendtialsProvider {
 }
 
 #[async_trait]
-impl AwsCredentialProvider for AwsBasicCretendtialsProvider {
+impl AwsCredentialProvider for AwsBasicCredentialsProvider {
     async fn get_credentials(&self) -> Result<&AwsCredentials, AwsCredentialsError> {
         Ok(&self.credentials)
     }
