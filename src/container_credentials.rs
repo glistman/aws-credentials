@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::{ffi::OsString, sync::Arc, time::Duration};
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
@@ -94,8 +94,10 @@ impl AwsContainerCredentialsProvider {
     }
 
     fn get_credentials_url() -> Option<String> {
+        let agent = std::env::var_os("AWS_AGENT_URL")
+            .unwrap_or_else(|| OsString::from("http://169.254.170.2"));
         std::env::var_os("AWS_CONTAINER_CREDENTIALS_RELATIVE_URI")
-            .map(|path| format!("http://169.254.170.2{}", path.to_string_lossy()))
+            .map(|path| format!("{}{}", agent.to_string_lossy(), path.to_string_lossy()))
     }
 
     pub async fn load_credentials(
