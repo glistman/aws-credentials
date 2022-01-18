@@ -4,6 +4,7 @@ use async_trait::async_trait;
 #[async_trait]
 pub trait AwsCredentialProvider {
     async fn get_credentials(&self) -> Result<&AwsCredentials, AwsCredentialsError>;
+    async fn reload(&mut self);
 }
 
 #[derive(Debug)]

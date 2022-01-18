@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use log::error;
 use tokio::sync::RwLock;
 
 use crate::{
@@ -45,5 +46,9 @@ impl AwsBasicCredentialsProvider {
 impl AwsCredentialProvider for AwsBasicCredentialsProvider {
     async fn get_credentials(&self) -> Result<&AwsCredentials, AwsCredentialsError> {
         Ok(&self.credentials)
+    }
+
+    async fn reload(&mut self) {
+        error!("reload credentials is not supported");
     }
 }

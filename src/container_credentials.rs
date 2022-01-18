@@ -10,6 +10,8 @@ use crate::{
     errors::AwsCredentialsError,
 };
 
+use log::info;
+
 #[derive(Deserialize, Serialize, Debug)]
 pub struct AwsContainerCredentials {
     #[serde(alias = "RoleArn")]
@@ -124,6 +126,7 @@ impl AwsContainerCredentialsProvider {
                 AwsContainerCredentialsProvider::load_credentials(credentials_url).await
             {
                 self.credentials = Some(new_aws_container_credentials.get_credentials());
+                self.ttl_in_seconds = new_aws_container_credentials.get_ttl_in_seconds();
                 error = false;
             }
         }
@@ -142,6 +145,7 @@ impl AwsContainerCredentialsProvider {
         loop {
             let aws_credential_provider = provider.read().await;
             let time_to_await = aws_credential_provider.time_to_await().await;
+            info!("time_to_await:credentials:{:?}", &time_to_await);
             drop(aws_credential_provider);
             sleep(time_to_await).await;
             let mut aws_credential_provider = provider.write().await;
@@ -154,6 +158,10 @@ impl AwsContainerCredentialsProvider {
 impl AwsCredentialProvider for AwsContainerCredentialsProvider {
     async fn get_credentials(&self) -> Result<&AwsCredentials, AwsCredentialsError> {
         self.get_raw_credentials().await
+    }
+
+    async fn reload(&mut self) {
+        self.reload().await;
     }
 }
 
